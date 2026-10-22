@@ -1,0 +1,26 @@
+.git
+.env
+.DS_Store
+airflow_settings.yaml
+__pycache__/
+astro
+.venv
+.astro/standalone/
+.astro/worktrees/
+airflow-webserver.pid
+webserver_config.py
+airflow.cfg
+airflow.db
+.astro/*.local.yml
+.astro/*.local.yaml
+
+**/.astro/dbt_metadata.json
+**/.astro/manifest.slim.json
+
+# --- NammaMart assignment: generated / large artifacts (not source) ---
+# The DuckDB warehouse is rebuilt every run by the DAGs; don't commit it.
+*.duckdb
+*.duckdb.wal
+include/warehouse_*.duckdb
+# Airflow task logs (generated inside the container)
+logs/
