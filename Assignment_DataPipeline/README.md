@@ -28,6 +28,7 @@ include/
   quarantine/gaurav/          rejected rows with failure_reason (evidence)
   warehouse_gaurav.duckdb      the DuckDB warehouse (created by the DAGs)
 SUBMISSION.md                 Parts 0, C, D, E, F, G answers + business questions
+Business_Questions_Result.docx Contains the result of SQL ran for business questions
 ```
 
 ## Run it
