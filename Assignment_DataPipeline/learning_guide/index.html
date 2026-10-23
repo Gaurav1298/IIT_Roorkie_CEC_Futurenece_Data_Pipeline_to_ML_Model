@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NammaMart Pipelines — Learning Guide</title>
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<header class="site">
+  <div class="site-inner">
+    <div class="brand-row">
+      <div class="brand-badge">N</div>
+      <div>
+        <div class="brand-title">NammaMart Data Pipelines — Learning Guide</div>
+        <div class="brand-sub">ETL &amp; ELT on Apache Airflow + DuckDB · a from-scratch walkthrough</div>
+      </div>
+      <div class="controls">
+        <label class="control" title="Narrative &amp; analogies — on for learning, off for quick revision">
+          <span id="story-label">Story: On</span>
+          <span class="switch"><input type="checkbox" id="story-switch" checked /><span class="slider"></span></span>
+        </label>
+        <label class="control" title="Extra technical depth under each concept">
+          <span id="deep-label">Deep dive: Off</span>
+          <span class="switch"><input type="checkbox" id="deep-switch" /><span class="slider"></span></span>
+        </label>
+        <label class="control" title="Colour theme">
+          🎨
+          <select id="theme-select" class="theme-select">
+            <option value="dark">Midnight (dark)</option>
+            <option value="light">Daylight (light)</option>
+            <option value="sepia">Sepia</option>
+            <option value="ocean">Ocean</option>
+            <option value="grape">Grape</option>
+            <option value="forest">Forest</option>
+            <option value="rose">Rosé (light)</option>
+          </select>
+        </label>
+        <label class="control" title="Visual style">
+          ✨
+          <select id="style-select" class="style-select">
+            <option value="soft">Soft</option>
+            <option value="sharp">Sharp</option>
+            <option value="playful">Playful</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button data-target="start" class="active">Start Here</button>
+      <button data-target="business">The Business Problem</button>
+      <button data-target="concepts">Core Concepts</button>
+      <button data-target="tech">Technologies &amp; Why</button>
+      <button data-target="flow">How It Connects</button>
+      <button data-target="code">Code Walkthrough</button>
+      <button data-target="glossary">Glossary</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================ START HERE ============================ -->
+<section id="start" class="page active">
+  <div class="hero">
+    <div class="hero-text">
+      <span class="hero-eyebrow">🚀 Interactive learning guide</span>
+      <h1>From messy CSVs to a trustworthy 9&nbsp;AM report.</h1>
+      <p class="tag">Everything about the NammaMart data pipelines — the business, the concepts, the tech, and the code — explained from zero. Flip on Story mode to learn, Deep dive to go further, and pick a theme that suits you.</p>
+      <div class="hero-stats">
+        <div class="stat"><div class="n">2</div><div class="l">pipelines (ETL + ELT)</div></div>
+        <div class="stat"><div class="n">6</div><div class="l">source files</div></div>
+        <div class="stat"><div class="n">₹1.13M</div><div class="l">reconciled revenue</div></div>
+        <div class="stat"><div class="n">7</div><div class="l">tabs to explore</div></div>
+      </div>
+    </div>
+    <div class="hero-art"><div class="hero-emoji">🛒</div></div>
+  </div>
+
+  <h1>Start Here</h1>
+  <p class="lead">A guide to understand the NammaMart project end to end — the business problem, the ideas, the tools, the code — assuming you have never done data engineering.</p>
+
+  <div class="box story">
+    <div class="box-t">📖 About "Story mode"</div>
+    Use the toggle in the top-right. <strong>On</strong> (default) shows the narrative, analogies, and plain-English intuition alongside the precise explanation — best for learning something the first time. <strong>Off</strong> hides the story bits and leaves only the precise facts — best for quick revision later. Your choice is remembered.
+  </div>
+
+  <h2>What this project actually is</h2>
+  <p>In one sentence: <strong>two automated data pipelines that take six messy CSV files from a grocery-delivery company and turn them into clean, trustworthy business reports every morning, on a schedule.</strong></p>
+
+  <div class="box story">
+    <div class="box-t">🏪 The 30-second story</div>
+    A fictional 10-minute grocery company, <strong>NammaMart</strong>, ran its daily leadership report by hand in Excel. It was late, full of errors, double-counted money, and leaked customers' phone numbers. They hired you (a "Forward Deployed Engineer") to replace that manual mess with software that produces the correct numbers automatically by 9&nbsp;AM every day. You built it two different ways — <strong>ETL</strong> and <strong>ELT</strong> — so the company could compare and choose.
+  </div>
+
+  <h2>How to read this guide</h2>
+  <div class="toc">
+    <a href="#business" data-jump="business">1 · The Business Problem<span>Who NammaMart is and what was broken</span></a>
+    <a href="#concepts" data-jump="concepts">2 · Core Concepts<span>Pipeline, ETL vs ELT, warehouse, data quality</span></a>
+    <a href="#tech" data-jump="tech">3 · Technologies &amp; Why<span>Airflow, DuckDB, pandas, Astro… and why each</span></a>
+    <a href="#flow" data-jump="flow">4 · How It Connects<span>One order's journey from CSV to report</span></a>
+    <a href="#code" data-jump="code">5 · Code Walkthrough<span>Every file explained — for interviews</span></a>
+    <a href="#glossary" data-jump="glossary">6 · Glossary<span>Every term, plain English</span></a>
+  </div>
+
+  <div class="box key">
+    <div class="box-t">✅ The one idea to hold onto</div>
+    Everything here exists to answer one question reliably: <em>"Is this morning's business number correct, explainable, and on time — every single day?"</em> Keep that in mind and every tool and design choice will make sense.
+  </div>
+</section>
+
+<!-- ============================ BUSINESS ============================ -->
+<section id="business" class="page">
+  <h1>The Business Problem</h1>
+  <p class="lead">Before any code, understand who the client is and what "done" means to them. This is the real job of a Forward Deployed Engineer.</p>
+
+  <h2><span class="mk">🏪</span>Who is NammaMart?</h2>
+  <p>NammaMart is a (fictional) <strong>10-minute grocery delivery</strong> company in Bengaluru. It runs 15 "dark stores" (small local warehouses) across 4 zones, sells ~150 products, and processed about 2,400 orders in September 2026.</p>
+
+  <h2><span class="mk">🧨</span>What was broken</h2>
+  <div class="box story">
+    <div class="box-t">😖 The morning that never worked</div>
+    Every day the COO wanted a 9:30 AM review. An analyst would download five spreadsheets, join them in Excel by hand, and email a summary around 10:30 AM — an hour late. The order totals never matched what the payment gateway said. Duplicate and test orders inflated revenue. Some "10-minute" deliveries showed times of hours. And customers' names, emails, and phone numbers were passed around in plain spreadsheets.
+  </div>
+
+  <table>
+    <tr><th>Problem</th><th>Why it hurt the business</th></tr>
+    <tr><td>Report arrived late (10:30 for a 9:30 meeting)</td><td>Decisions made on yesterday's gut feel</td></tr>
+    <tr><td>Revenue didn't reconcile with payments</td><td>Finance wasted half a day a week hunting mismatches</td></tr>
+    <tr><td>Duplicates &amp; test rows counted as revenue</td><td>Inflated, untrustworthy numbers</td></tr>
+    <tr><td>Impossible delivery times</td><td>The flagship "10-minute promise" KPI was meaningless</td></tr>
+    <tr><td>Customer PII in spreadsheets</td><td>Privacy &amp; legal risk (India's DPDP Act)</td></tr>
+    <tr><td>No history kept</td><td>Returns days later were never corrected</td></tr>
+  </table>
+
+  <h2>What is a "Forward Deployed Engineer" (FDE)?</h2>
+  <p>An FDE is an engineer who sits <em>with</em> the client, learns their real problem, agrees on what "correct" means, and ships working software on their data. The emphasis is less "write clever code" and more <strong>"make the 9 AM number right, explainable, and there every day."</strong></p>
+
+  <div class="box key">
+    <div class="box-t">✅ The ten things the client wanted (acceptance criteria)</div>
+    Report ready before 9 AM IST Mon–Sat · no bad order reaches finance · every raw record kept for audit · bad rows set aside with a reason · re-runs never double-count · next-day file loads incrementally · orders reconcile with payments · customer PII protected · anyone can see if today's run worked · a written ETL-vs-ELT recommendation.
+  </div>
+
+  <h2><span class="mk">📁</span>The six source files</h2>
+  <table>
+    <tr><th>File</th><th>Rows</th><th>What it is</th><th>Type</th></tr>
+    <tr><td><code>orders.csv</code></td><td>2,412</td><td>Every order line</td><td>Fact</td></tr>
+    <tr><td><code>payments.csv</code></td><td>2,228</td><td>Payment gateway records</td><td>Fact</td></tr>
+    <tr><td><code>customers.csv</code></td><td>405</td><td>Customer master (has PII)</td><td>Dimension</td></tr>
+    <tr><td><code>products.csv</code></td><td>152</td><td>Product catalogue</td><td>Dimension</td></tr>
+    <tr><td><code>stores.csv</code></td><td>15</td><td>Store master</td><td>Dimension</td></tr>
+    <tr><td><code>orders_..._increment.csv</code></td><td>160</td><td>Next-day orders + corrections</td><td>Incremental feed</td></tr>
+  </table>
+  <p class="revision-hint">Fact = the events/measurements (orders, payments). Dimension = the descriptive lookups (who, what, where).</p>
+  <div class="box story">
+    <div class="box-t">💡 Fact vs Dimension, intuitively</div>
+    Think of a sentence: <em>"Customer C00199 bought Product P0023 at Store S10 for ₹421.80."</em> The <strong>fact</strong> is the purchase and its amount. The <strong>dimensions</strong> are the nouns that describe it — the customer, the product, the store. Facts are what you sum up; dimensions are how you slice and label them.
+  </div>
+</section>
+
+<!-- ============================ CONCEPTS ============================ -->
+<section id="concepts" class="page">
+  <h1>Core Concepts</h1>
+  <p class="lead">The handful of ideas that the whole project is built on. Learn these and nothing else will feel mysterious.</p>
+
+  <h2><span class="mk">🏭</span>1. What is a data pipeline?</h2>
+  <p>A <strong>data pipeline</strong> is an automated sequence of steps that moves data from where it is produced (source files, apps, databases) to where it is useful (reports, dashboards), cleaning and reshaping it along the way.</p>
+  <div class="box story">
+    <div class="box-t">🏭 Like a factory line</div>
+    Raw material (messy CSVs) enters one end. Each station does one job — unpack, inspect, clean, assemble, package. A finished product (a trustworthy report) comes out the other end. A pipeline is that assembly line, but for data, and it runs itself on a schedule.
+  </div>
+
+  <h2>2. CSV files</h2>
+  <p>A <strong>CSV</strong> ("comma-separated values") is a plain-text table: the first line is column names, each following line is a row, values separated by commas. It has <em>no</em> types, no constraints, no indexes — just text.</p>
+  <div class="box java">
+    <div class="box-t">☕ Coming from MySQL</div>
+    A CSV is roughly what you'd get if you ran a <code>SELECT *</code> and exported it to a text file — but with none of the guarantees. No column types, no <code>NOT NULL</code>, no primary keys. So a column that should be a number can contain <code>"abc"</code>, and a "unique" id can appear twice. That's exactly why the data was so messy and why validation matters.
+  </div>
+
+  <h2>3. ETL vs ELT — the central idea</h2>
+  <p>Both are pipeline styles. The letters stand for <strong>E</strong>xtract, <strong>T</strong>ransform, <strong>L</strong>oad — the order of the last two is the whole difference.</p>
+  <div class="compare">
+    <div class="col">
+      <h3><span class="pill etl">ETL</span> Clean, then store</h3>
+      <p><strong>Extract → Transform → Load.</strong> You clean and validate the data <em>first</em>, in code, and only load the <em>good</em> rows into the warehouse.</p>
+      <ul>
+        <li>Bad rows never reach the reporting tables.</li>
+        <li>Finance loves it: the warehouse is always clean.</li>
+        <li>Downside: the original raw rows aren't kept in the warehouse (harder to audit/replay).</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h3><span class="pill elt">ELT</span> Store, then clean</h3>
+      <p><strong>Extract → Load → Transform.</strong> You load <em>every</em> raw row first, untouched, then clean it <em>inside</em> the warehouse using SQL.</p>
+      <ul>
+        <li>Every original row is kept for audit and replay.</li>
+        <li>Analytics &amp; compliance love it: nothing is ever lost.</li>
+        <li>Downside: bad rows live in the warehouse (must be filtered out carefully).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="box story">
+    <div class="box-t">🍲 A cooking analogy</div>
+    <strong>ETL</strong> is washing and chopping the vegetables outside, then bringing only the clean pieces into the kitchen. <strong>ELT</strong> is bringing the whole basket — dirt and all — into the kitchen, then washing at the sink. Same meal; different place you do the cleaning. ETL keeps the kitchen spotless; ELT keeps every scrap in case you need to check what came in.
+  </div>
+  <div class="box key">
+    <div class="box-t">✅ Why build both?</div>
+    The client's CTO was undecided. Finance wanted guaranteed-clean tables (ETL); analytics/compliance wanted every raw record kept (ELT). So you built both on the same data, proved they produce the <em>same</em> numbers, and wrote a recommendation. Proving they match (to the rupee) is what makes the comparison trustworthy.
+  </div>
+  <p class="deep-hint">Turn on “Deep dive” (top-right) for the deeper mechanics of each concept.</p>
+  <div class="box deep">
+    <div class="box-t">🔬 Deep dive: why ELT won here, and the historical shift</div>
+    <p>ETL was born when storage and compute were expensive and warehouses were rigid — you cleaned data <em>before</em> loading because warehouse space and processing were precious. ELT became dominant once cheap, scalable, columnar warehouses (BigQuery, Snowflake, DuckDB) made it feasible to dump everything in and transform with SQL at query-scale.</p>
+    <p>Concretely in this project: ELT keeps <code>raw_*</code> as an immutable, timestamped copy of every source row, so <em>lineage</em> (tracing a report number back to its exact source rows) is one query. ETL has to reconstruct that from quarantine side-files. As data grows 1000×, ELT's set-based SQL stays fast while ETL's row-wise pandas would strain memory passing whole DataFrames through XCom. That combination — auditability + scalability + ease of change (edit a <code>.sql</code> file, not Python) — is why the recommendation favours ELT, with ETL's strict validation reused as the quality gate.</p>
+  </div>
+
+  <h2><span class="mk">🏬</span>4. The data warehouse</h2>
+  <p>A <strong>data warehouse</strong> is a database optimized for <em>analytics</em> (summing, grouping, reporting across lots of rows) rather than for running an app. In this project the warehouse is <strong>DuckDB</strong>, stored as a single file: <code>warehouse_gaurav.duckdb</code>.</p>
+  <div class="box java">
+    <div class="box-t">☕ Coming from MySQL</div>
+    MySQL is built for an application: many small reads/writes, one row at a time (OLTP). A warehouse is built for questions like "total revenue by category for the month" that scan millions of rows (OLAP). Same SQL language you already know — different engine tuned for big aggregations.
+  </div>
+
+  <h2>5. Star schema (fact + dimensions)</h2>
+  <p>A common warehouse layout: one central <strong>fact</strong> table (the events — here, orders) surrounded by <strong>dimension</strong> tables (customer, product, store). Drawn out, it looks like a star.</p>
+  <div class="flow">
+    <span class="node">dim_customer</span>
+    <span class="arrow">→</span>
+    <span class="node good">fact_orders</span>
+    <span class="arrow">←</span>
+    <span class="node">dim_product</span>
+  </div>
+  <p>Queries join the fact to the dimensions: "sum <code>order_amount</code> (fact) grouped by <code>category</code> (product dimension)."</p>
+
+  <h2>6. Data quality — the six dimensions</h2>
+  <p>"Data quality" isn't vague; it's measured along six concrete <strong>dimensions</strong>. Every rule in this project maps to one.</p>
+  <table>
+    <tr><th>Dimension</th><th>Question it answers</th><th>Example rule here</th></tr>
+    <tr><td>Completeness</td><td>Is required data present?</td><td>Every order must have a <code>customer_id</code></td></tr>
+    <tr><td>Uniqueness</td><td>Is each record stored once?</td><td><code>order_id</code> must be unique</td></tr>
+    <tr><td>Validity</td><td>Is the value in the allowed format/list?</td><td><code>order_status</code> ∈ {DELIVERED, CANCELLED, RETURNED}</td></tr>
+    <tr><td>Accuracy</td><td>Is the value believable?</td><td><code>quantity &gt; 0</code>; delivery ≤ 120 min</td></tr>
+    <tr><td>Consistency</td><td>Does it agree with other data?</td><td>Order's <code>product_id</code> exists in products</td></tr>
+    <tr><td>Timeliness</td><td>Is the data current?</td><td>No future-dated <code>order_ts</code></td></tr>
+  </table>
+  <p>Each failed check has a <strong>severity</strong>: <span class="pill crit">Critical</span> rows are quarantined (removed to a side file with a reason); <span class="pill warn">Warning</span> rows still load but are logged.</p>
+
+  <h2>7. Quarantine</h2>
+  <p>Instead of silently deleting bad rows, the pipeline writes them to a <strong>quarantine</strong> file with a <code>failure_reason</code> column. Nothing is ever lost without explanation — crucial for audits ("show me the order you rejected and why").</p>
+
+  <h2>8. Idempotency</h2>
+  <p><strong>Idempotent</strong> means running the pipeline twice produces the same result as running it once — no double-counted revenue. Achieved here by <em>rebuilding/replacing</em> tables each run instead of blindly appending.</p>
+  <div class="box story">
+    <div class="box-t">💡 Like a light switch set to "on"</div>
+    Flipping a switch to "on" when it's already on changes nothing. An idempotent pipeline is the same: run it again and again, the warehouse ends up in the same correct state. The opposite — appending every run — would keep adding duplicate revenue each time.
+  </div>
+  <div class="box deep">
+    <div class="box-t">🔬 Deep dive: three ways to achieve idempotency</div>
+    <p><strong>1. Full replace</strong> (what ETL's <code>load_star</code> uses): <code>CREATE OR REPLACE TABLE</code> rebuilds the table from scratch each run. Simplest and bullet-proof for modest data, but it rewrites everything even if little changed.</p>
+    <p><strong>2. Delete-then-insert by key</strong> (what the observability tables use): <code>DELETE WHERE run_id = ?</code> then insert this run's rows. Idempotent <em>per run</em> without touching other runs' history — good for append-only audit logs.</p>
+    <p><strong>3. Upsert / MERGE</strong> (the incremental load): match on a key, update if present else insert. Idempotent <em>and</em> efficient for changing data, but the trickiest to get right. At scale you'd prefer (3); for this dataset (1) is clear and correct. Choosing the right one per table is a real design decision, not a default.</p>
+  </div>
+
+  <h2>9. Incremental load &amp; upsert</h2>
+  <p>The next day's file brings <em>new</em> orders plus <em>corrections</em> to old ones (e.g. an order now RETURNED). An <strong>incremental load</strong> adds only the new data; an <strong>upsert</strong> (update-or-insert, also called MERGE) overwrites changed rows and inserts new ones — without creating duplicates.</p>
+  <div class="box java">
+    <div class="box-t">☕ Coming from MySQL</div>
+    An upsert is exactly <code>INSERT ... ON DUPLICATE KEY UPDATE</code> in spirit: if the <code>order_id</code> already exists, update it; otherwise insert it. Here it's done by deleting the matching keys then inserting the corrected rows.
+  </div>
+
+  <h2>10. PII masking</h2>
+  <p><strong>PII</strong> = Personally Identifiable Information (names, emails, phones). <strong>Masking</strong> hides most of it while keeping it usable: <code>priya@example.com → pr***@example.com</code>, <code>9876543210 → 98******10</code>. We mask rather than delete because reports still need to <em>count</em> customers and rank spend.</p>
+
+  <h2>11. Orchestration &amp; scheduling</h2>
+  <p><strong>Orchestration</strong> is running the steps in the right order, in parallel where possible, with retries and logging. The tool that does this is Apache Airflow (next tab). <strong>Scheduling</strong> here uses a <strong>cron</strong> expression — <code>0 9 * * 1-6</code> means "09:00, Monday to Saturday."</p>
+
+  <h2>12. Observability</h2>
+  <p>Being able to tell, from the outside, whether a run was healthy — without reading the code. Done here with a <code>dq_results</code> table (quality scorecard) and a <code>pipeline_runs</code> table (one audit row per run: how many rows in, loaded, quarantined, and the status).</p>
+</section>
+
+<!-- ============================ TECH ============================ -->
+<section id="tech" class="page">
+  <h1>Technologies &amp; Why</h1>
+  <p class="lead">What each tool is, and — more importantly — <em>why it was chosen</em> over the alternatives. This is the part interviewers probe.</p>
+
+  <h2><span class="mk">🧰</span>The stack at a glance</h2>
+  <table>
+    <tr><th>Tool</th><th>Role in this project</th><th>One-line why</th></tr>
+    <tr><td><strong>Apache Airflow</strong></td><td>Orchestration &amp; scheduling</td><td>Industry standard for scheduled, observable pipelines</td></tr>
+    <tr><td><strong>DuckDB</strong></td><td>The warehouse (SQL engine)</td><td>Zero-setup, file-based, analytics-fast</td></tr>
+    <tr><td><strong>pandas</strong></td><td>ETL transforms in Python</td><td>The default for row/column data wrangling</td></tr>
+    <tr><td><strong>SQL</strong></td><td>ELT transforms in the warehouse</td><td>Set-based, scales, auditable</td></tr>
+    <tr><td><strong>Astro CLI</strong></td><td>Runs Airflow locally</td><td>One command to a full local Airflow</td></tr>
+    <tr><td><strong>Docker / Podman</strong></td><td>Containers under Astro</td><td>Same environment everywhere, no "works on my machine"</td></tr>
+    <tr><td><strong>Git / GitHub</strong></td><td>Version control &amp; submission</td><td>Track changes, share the repo</td></tr>
+  </table>
+
+  <h2><span class="mk">🌬️</span>Apache Airflow</h2>
+  <p><strong>What:</strong> a platform to author, schedule, and monitor workflows. A workflow is a <strong>DAG</strong> (Directed Acyclic Graph) — a set of <strong>tasks</strong> with dependencies, drawn as boxes and arrows. It shows every run, every task's logs, retries, and status in a web UI.</p>
+  <div class="box story">
+    <div class="box-t">🎬 Like a film director</div>
+    Airflow doesn't do the acting (that's your Python/SQL). It's the director: it decides which scenes run in parallel, which wait for others, calls "action" on schedule, re-shoots a scene that fails (retries), and keeps a log of every take.
+  </div>
+  <p><strong>Why Airflow (not a cron script or Jenkins)?</strong> A plain cron + script gives you no visibility, no per-step retries, no dependency graph, no history. Airflow gives all of that plus a UI the client can look at — directly serving the client's "anyone can see whether today's run worked."</p>
+  <div class="box gotcha">
+    <div class="box-t">⚠️ Key terms</div>
+    <strong>DAG</strong> = the whole workflow. <strong>Task</strong> = one step (a box). <strong>TaskFlow API</strong> = the modern style where a Python function with a <code>@task</code> decorator becomes a task, and its return value is passed to the next. <strong>Trigger</strong> = start a run. <strong>catchup</strong> = whether to back-fill missed schedules (we set it off).
+  </div>
+
+  <h2><span class="mk">🦆</span>DuckDB</h2>
+  <p><strong>What:</strong> an in-process analytical SQL database. The entire warehouse is one file; you query it with standard SQL. Think "SQLite, but built for analytics."</p>
+  <div class="box java">
+    <div class="box-t">☕ Coming from MySQL</div>
+    You already know SQL — DuckDB speaks it. The difference: there's no server to install or connect to, no host/port/credentials. You "connect" to a <em>file</em>. And it's tuned for big <code>GROUP BY</code> aggregations (columnar storage) rather than lots of tiny transactions.
+  </div>
+  <p><strong>Why DuckDB (not Postgres/MySQL/Snowflake)?</strong> For a local, open-source assignment it needs zero setup, runs anywhere, and is extremely fast for the aggregate queries a warehouse does. A cloud warehouse (Snowflake/BigQuery) would cost money and need accounts; a server DB (Postgres) would need provisioning. DuckDB is a single pip install and a file.</p>
+  <div class="box gotcha">
+    <div class="box-t">⚠️ The gotcha we hit</div>
+    DuckDB allows only <strong>one writer at a time</strong> and reuses one cursor per connection. That caused two real bugs (a file-lock conflict and an "unfinished result" error) which we fixed by running the write-tasks in a strict sequence and always draining each query's result. Great interview story about debugging.
+  </div>
+
+  <h2>pandas</h2>
+  <p><strong>What:</strong> a Python library for working with tabular data in memory as a <code>DataFrame</code> (a table with typed columns). Used in the <strong>ETL</strong> pipeline to clean, dedupe, join, and mask.</p>
+  <p><strong>Why pandas for ETL?</strong> It's the standard, expressive tool for row/column manipulation in Python, and ETL cleans data in code before loading. <strong>Why not pandas for ELT?</strong> ELT cleans inside the warehouse in SQL — and SQL is set-based, scales to huge data, and keeps the logic auditable as <code>.sql</code> files.</p>
+
+  <h2>Astro CLI (Astronomer)</h2>
+  <p><strong>What:</strong> a command-line tool that spins up a complete local Airflow (scheduler, web server, database, etc.) in containers with one command: <code>astro dev start</code>.</p>
+  <p><strong>Why:</strong> installing Airflow by hand is fiddly (many components, a metadata database). Astro packages it so you get a working Airflow in minutes and the exact same setup as everyone else on the course.</p>
+
+  <h2>Docker / Podman (containers)</h2>
+  <p><strong>What:</strong> a <strong>container</strong> is a lightweight, isolated box holding an app and everything it needs (OS libs, Python, packages). Astro runs Airflow inside containers. <strong>Docker</strong> and <strong>Podman</strong> are two engines that run containers; this machine uses Podman.</p>
+  <div class="box story">
+    <div class="box-t">📦 Like shipping containers</div>
+    Before standardized shipping containers, loading a ship was chaos. Containers made cargo portable across any ship, crane, or truck. Software containers do the same: the pipeline runs identically on your laptop, a teammate's, or a server — ending "but it works on my machine."
+  </div>
+  <p><strong>Why it matters here:</strong> the DAG file paths like <code>/usr/local/airflow/include/...</code> are paths <em>inside</em> the container. Astro "mounts" your local <code>dags/</code> and <code>include/</code> folders into that container so Airflow can see them.</p>
+
+  <h2>cron &amp; pendulum (scheduling + time zones)</h2>
+  <p><strong>cron</strong> is a compact way to express a schedule: <code>0 9 * * 1-6</code> = minute 0, hour 9, any day, any month, weekdays 1–6 (Mon–Sat). <strong>pendulum</strong> is a Python date/time library used to pin the schedule to the <code>Asia/Kolkata</code> time zone so "9 AM" means 9 AM in India, not UTC.</p>
+  <div class="box gotcha">
+    <div class="box-t">⚠️ The timezone trap</div>
+    Airflow defaults to UTC. If you don't set the timezone, <code>0 9</code> fires at 9 AM UTC = 2:30 PM IST — five and a half hours late for a 9:30 AM meeting. Pinning <code>Asia/Kolkata</code> is what makes the SLA real.
+  </div>
+</section>
+
+<!-- ============================ FLOW ============================ -->
+<section id="flow" class="page">
+  <h1>How It All Connects</h1>
+  <p class="lead">Follow one order from a raw line in a CSV all the way to the 9 AM report, through both pipelines.</p>
+
+  <h2>The big picture</h2>
+  <div class="flow">
+    <span class="node src">6 CSV files</span>
+    <span class="arrow">→</span>
+    <span class="node">Airflow DAG (runs 9 AM IST)</span>
+    <span class="arrow">→</span>
+    <span class="node good">DuckDB warehouse</span>
+    <span class="arrow">→</span>
+    <span class="node">Reports &amp; business answers</span>
+  </div>
+
+  <h2>The complete system flow — entry point to the Airflow UI</h2>
+  <p>This is the end-to-end journey: how a plain <code>.py</code> file becomes a running, monitorable pipeline you can watch in a browser. Follow the numbered cards top to bottom.</p>
+  <div class="sysflow">
+
+    <div class="sf-row">
+      <div class="sf-card entry"><span class="sf-n">1</span><span class="sf-h">Entry point: the DAG file</span>
+        <div class="sf-d">You write <code>dags/nammamart_etl_gaurav.py</code>. The last line, <code>nammamart_etl_gaurav()</code>, calls the <code>@dag</code>-decorated function. That call <em>registers</em> the DAG — it doesn't run any tasks, it just defines the workflow (tasks + dependencies).</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card"><span class="sf-n">2</span><span class="sf-h">Astro starts the containers</span>
+        <div class="sf-d"><code>astro dev start</code> builds a Docker/Podman image (Airflow + your <code>requirements.txt</code>) and starts ~5 containers: scheduler, DAG-processor, API server (the UI), triggerer, and a Postgres metadata DB.</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card"><span class="sf-n">3</span><span class="sf-h">Your folders are mounted in</span>
+        <div class="sf-d">Astro mounts your local <code>dags/</code> and <code>include/</code> into the container at <code>/usr/local/airflow/…</code>. That's why the code uses those absolute paths — they're paths <em>inside</em> the container, not your laptop.</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card"><span class="sf-n">4</span><span class="sf-h">The DAG-processor parses the file</span>
+        <div class="sf-d">A component continuously scans <code>dags/</code>, imports each <code>.py</code>, and stores the DAG's structure in the Postgres metadata DB. If the file has a syntax/import error it shows up as an "import error" (the thing we kept checking with <code>dags list-import-errors</code>).</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card run"><span class="sf-n">5</span><span class="sf-h">The scheduler decides to run</span>
+        <div class="sf-d">The scheduler reads the <code>schedule="0 9 * * 1-6"</code> (interpreted in <code>Asia/Kolkata</code>) and creates a <strong>DAG run</strong> at 9 AM — or immediately when you <em>Trigger</em> manually. It queues each task when its upstream dependencies are met.</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card run"><span class="sf-n">6</span><span class="sf-h">Tasks execute (your Python/SQL runs)</span>
+        <div class="sf-d">A worker runs each <code>@task</code> function. Extracts run in parallel; the DuckDB-writing tasks run in a chain. Return values pass to the next task via <strong>XCom</strong>. The actual work — pandas cleaning, <code>duckdb.connect()</code>, running <code>stg_*.sql</code> — happens here.</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card run"><span class="sf-n">7</span><span class="sf-h">Data lands in DuckDB</span>
+        <div class="sf-d">Tasks read/write <code>include/warehouse_gaurav.duckdb</code>. Because include/ is mounted, the file also appears on your laptop — so <code>inspect_warehouse.py</code> can read the same tables the DAG just wrote.</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card view"><span class="sf-n">8</span><span class="sf-h">You watch it in the Airflow UI</span>
+        <div class="sf-d">The API-server container serves the web UI at <code>localhost:8080</code>. It reads task states and logs from the metadata DB and shows the <strong>Graph</strong> (boxes turning green), <strong>Grid</strong> (run history), and per-task <strong>Logs</strong> — where your <code>print()</code> lines appear.</div>
+      </div>
+    </div>
+    <div class="sf-down">▼</div>
+
+    <div class="sf-row">
+      <div class="sf-card view"><span class="sf-n">9</span><span class="sf-h">Observability tables close the loop</span>
+        <div class="sf-d">The final tasks write <code>dq_results</code> (quality scorecard) and <code>pipeline_runs</code> (one audit row per run). Anyone can query these to answer "did today's 9 AM run work, and why/why not" — without reading any code.</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="box gotcha story">
+    <div class="box-t">⚠️ The mental model that ties it together</div>
+    The <code>.py</code> file is a <em>definition</em>, not a script you run top-to-bottom. Astro/containers provide the environment, the scheduler decides <em>when</em>, workers decide <em>what runs next</em>, DuckDB holds the <em>results</em>, and the UI is just a <em>window</em> onto the metadata DB. Separating "define / schedule / execute / store / view" is the whole point of an orchestrator.
+  </div>
+
+  <h2>The ETL path (clean first)</h2>
+  <ol class="steps">
+    <li><strong>Extract</strong> — five tasks read the five master/daily CSVs in parallel into pandas DataFrames.</li>
+    <li><strong>Validate</strong> — apply the six-dimension quality rules; split each file into <em>passed</em> and <em>failed</em> rows.</li>
+    <li><strong>Quarantine</strong> — write failed rows to a CSV with a <code>failure_reason</code> (nothing silently dropped).</li>
+    <li><strong>Transform</strong> — dedupe dimensions, <em>mask</em> email/phone, join orders to product &amp; store, derive <code>net_revenue</code>, <code>gross_margin</code>, <code>within_15_min</code>.</li>
+    <li><strong>Load</strong> — write a clean <em>star schema</em> (<code>etl_fact_orders</code> + 3 dims) into DuckDB, idempotently (rebuild, don't append).</li>
+    <li><strong>Reconcile</strong> — compare clean orders to payments; write every mismatch with a reason.</li>
+    <li><strong>Report</strong> — build revenue-by-zone and margin-by-category summary tables.</li>
+    <li><strong>Audit</strong> — write a <code>dq_results</code> scorecard and a <code>pipeline_runs</code> row.</li>
+  </ol>
+
+  <h2>The ELT path (store first)</h2>
+  <ol class="steps">
+    <li><strong>Load raw</strong> — copy all five CSVs <em>exactly</em> into <code>raw_*</code> tables (all text, nothing cleaned), tagged with source file + run id.</li>
+    <li><strong>Stage</strong> — SQL files (<code>stg_*.sql</code>) cast types, standardise, dedupe, mask PII, and tag each row with <code>dq_status</code> (PASS/FAIL) + <code>failure_reason</code>.</li>
+    <li><strong>Incremental MERGE</strong> — optionally load the next-day file: append to raw, upsert into staging on <code>order_id</code>.</li>
+    <li><strong>Mart</strong> — SQL files (<code>mart_*.sql</code>) build business-ready tables answering the six questions, reading only <code>dq_status='PASS'</code> rows.</li>
+    <li><strong>Audit</strong> — same <code>dq_results</code> + <code>pipeline_runs</code> tables.</li>
+  </ol>
+
+  <h2>The three ELT layers</h2>
+  <table>
+    <tr><th>Layer</th><th>Tables</th><th>Rule</th></tr>
+    <tr><td><strong>Raw</strong></td><td><code>raw_orders</code>, …</td><td>Exact text copy of each CSV. Never cleaned, never deleted.</td></tr>
+    <tr><td><strong>Staging</strong></td><td><code>stg_orders</code>, …</td><td>SQL only: cast, standardise, dedupe, mask, mark PASS/FAIL.</td></tr>
+    <tr><td><strong>Mart</strong></td><td><code>mart_*</code></td><td>SQL only: business-ready answers, clean rows only.</td></tr>
+  </table>
+
+  <div class="box key">
+    <div class="box-t">✅ The proof it works</div>
+    Both pipelines independently produce the <strong>same</strong> September total revenue — <strong>₹1,133,523.90</strong> — and the same 118 payment mismatches. Identical results from two different designs is what makes the final ETL-vs-ELT recommendation credible.
+  </div>
+
+  <h2>Why the order of tasks matters</h2>
+  <div class="box gotcha">
+    <div class="box-t">⚠️ Parallel where safe, serial where required</div>
+    The five <em>extracts</em> run in parallel (they don't touch each other). But every task that <em>writes to DuckDB</em> runs in a strict chain, because DuckDB allows only one writer at a time. Knowing when to parallelise and when to serialise is a core pipeline-design skill.
+  </div>
+</section>
+
+<!-- ============================ CODE ============================ -->
+<section id="code" class="page">
+  <h1>Code Walkthrough</h1>
+  <p class="lead">Every important file, what it does, and the "why" behind the design — written so you can confidently explain this project in an interview.</p>
+
+  <div class="box key">
+    <div class="box-t">🗂️ Project structure</div>
+    <pre><code>dags/
+  nammamart_etl_gaurav.py     <span class="cmt"># the ETL pipeline (Python/pandas)</span>
+  nammamart_elt_gaurav.py     <span class="cmt"># the ELT pipeline (orchestrates SQL)</span>
+include/
+  nammamart/
+    quality_checks.py         <span class="cmt"># the 6-dimension rules (shared brain)</span>
+    masking.py                <span class="cmt"># PII masking helpers</span>
+  sql/
+    stg_*.sql                 <span class="cmt"># ELT staging transforms</span>
+    mart_*.sql                <span class="cmt"># ELT business tables</span>
+  data/nammamart/             <span class="cmt"># the 6 source CSVs</span>
+  profiling/                  <span class="cmt"># helper scripts (profile, inspect, test)</span>
+  quarantine/gaurav/          <span class="cmt"># rejected rows (evidence)</span></code></pre>
+  </div>
+
+  <h2>dags/nammamart_etl_gaurav.py — the ETL pipeline</h2>
+  <p>A single <code>@dag</code> function containing <code>@task</code> functions. Each task is a step; Airflow runs them per the dependencies wired at the bottom.</p>
+  <h3>Key building blocks</h3>
+  <ul>
+    <li><strong>Helper <code>connect_warehouse()</code></strong> — opens DuckDB with a retry loop, because a write lock can briefly be held by another task. <em>Why:</em> DuckDB is single-writer.</li>
+    <li><strong>Helper <code>run_sql()</code></strong> — runs a statement and always <code>.fetchall()</code>s it. <em>Why:</em> DuckDB reuses one cursor; an un-drained result breaks the next statement.</li>
+    <li><strong>Extract tasks</strong> — one per file, run in parallel, each returns the CSV as JSON (how Airflow passes data between tasks, called XCom).</li>
+    <li><strong>validate</strong> — calls the shared <code>quality_checks</code> functions; returns passed/failed sets plus the <code>dq_rows</code> scorecard.</li>
+    <li><strong>quarantine</strong> — writes failed rows to CSV with <code>failure_reason</code>.</li>
+    <li><strong>transform</strong> — numeric casts, dedupe dims, mask PII, join to product/store, derive <code>net_revenue</code>/<code>gross_margin</code>/<code>within_15_min</code>, normalise null zone/category to <code>UNKNOWN</code>.</li>
+    <li><strong>load_star</strong> — <code>CREATE OR REPLACE TABLE</code> for fact + 3 dims. <em>Why REPLACE:</em> that's what makes re-runs idempotent.</li>
+    <li><strong>reconcile</strong> — left-join payments to clean orders; emit one row per mismatch with a reason.</li>
+    <li><strong>report / write_dq_results / run_audit</strong> — summary tables, the quality scorecard, and the run-audit row.</li>
+  </ul>
+  <div class="box gotcha">
+    <div class="box-t">⚠️ Interview-ready detail</div>
+    The write tasks are wired as a <em>chain</em> (<code>load_star → reconcile → report → write_dq_results → run_audit</code>) specifically so two tasks never hold the DuckDB write-lock at once. <code>run_audit</code> uses <code>trigger_rule="all_done"</code> so it records the run even if an upstream task failed.
+  </div>
+
+  <h3>🔎 Interactive: walk through the ETL DAG</h3>
+  <p>Click any block to see what it does, or press <strong>Walk me through</strong> to step through in order.</p>
+  <div class="explainer">
+    <div class="explainer-head">
+      <span class="fname">dags/nammamart_etl_gaurav.py</span>
+      <span class="hint">click a block →</span>
+      <button class="walk-btn">▶ Walk me through</button>
+    </div>
+    <div class="explainer-body">
+      <div class="code-col">
+<span class="blk" data-ex-title="Imports &amp; the path trick" data-ex="The DAG imports Airflow's TaskFlow tools (@dag, @task), pandas, duckdb, and pendulum for timezones.|The line sys.path.insert(0, '/usr/local/airflow/include') lets the DAG import our own helper packages (nammamart.quality_checks, nammamart.masking) from the mounted include/ folder — otherwise Python wouldn't find them.">import sys
+sys.path.insert(0, "/usr/local/airflow/include")
+from airflow.sdk import dag, task, get_current_context
+import pandas as pd, duckdb, pendulum
+from nammamart.quality_checks import validate_orders, ...
+from nammamart.masking import mask_customer_frame</span>
+<span class="blk" data-ex-title="connect_warehouse(): the lock-safety helper" data-ex="DuckDB allows only ONE writer at a time. If two tasks open the file to write simultaneously, one gets a lock error.|This helper retries the connection a few times with a short sleep, so a brief lock held by another task resolves itself instead of failing the run. It only retries on lock errors; anything else is re-raised immediately.">def connect_warehouse(retries=10, delay=1.5):
+    for _ in range(retries):
+        try:
+            return duckdb.connect(WAREHOUSE)
+        except Exception as e:
+            if "lock" not in str(e).lower(): raise
+            time.sleep(delay)</span>
+<span class="blk" data-ex-title="run_sql(): drain every result" data-ex="DuckDB's Python driver reuses a single cursor per connection. If you run a statement and don't consume its result, the NEXT statement fails with 'unfinished result'.|This wrapper calls .fetchall() after every statement to drain it, so the connection is always clean. This fixed a real bug where DELETE-then-INSERT crashed.">def run_sql(con, sql, params=None):
+    cur = con.execute(sql, params) if params else con.execute(sql)
+    try: return cur.fetchall()
+    except Exception: return []  # DDL has no rows</span>
+<span class="blk" data-ex-title="@dag: scheduling &amp; config" data-ex="The @dag decorator turns the function into an Airflow DAG.|schedule='0 9 * * 1-6' + the Asia/Kolkata start_date means 9 AM IST, Mon–Sat. catchup=False means don't back-fill missed days. default_args sets retries, retry_delay and an execution_timeout for every task.">@dag(dag_id="nammamart_etl_gaurav",
+     schedule="0 9 * * 1-6",
+     start_date=pendulum.datetime(2026,9,1, tz="Asia/Kolkata"),
+     catchup=False, default_args=default_args)
+def nammamart_etl_gaurav():</span>
+<span class="blk" data-ex-title="Extract tasks (run in parallel)" data-ex="Each @task reads one CSV into a pandas DataFrame and returns it as JSON.|Returning a value is how Airflow passes data to the next task (called XCom). These five have no dependencies on each other, so Airflow runs them in parallel.">    @task
+    def extract_orders():
+        df = pd.read_csv(f"{DATA_DIR}/orders.csv", dtype=str)
+        return df.to_json()
+    # ... extract_payments, _customers, _products, _stores</span>
+<span class="blk" data-ex-title="validate: the quality gate" data-ex="validate calls the shared quality_checks functions on each file.|It validates orders against the CLEAN (passed) dimensions, so an order pointing at a bad product is caught. It returns passed rows, failed rows, and the dq_rows scorecard — all as JSON for the next tasks.">    @task
+    def validate(orders_j, payments_j, customers_j, products_j, stores_j):
+        r_cust  = validate_customers(read_json(customers_j))
+        r_ord   = validate_orders(read_json(orders_j),
+                      r_cust["passed"], r_prod["passed"], r_store["passed"])
+        return { "orders_passed": ..., "dq_rows": ... }</span>
+<span class="blk" data-ex-title="transform: clean, mask, join, derive" data-ex="Numeric casts, dedupe dimensions, then mask_customer_frame() hides email/phone.|It joins orders to product (for cost_price) and store (for zone), derives net_revenue, gross_margin and within_15_min, and normalises null zone/category to 'UNKNOWN' so JSON round-trips don't turn them into the literal string 'None'.">    @task
+    def transform(v):
+        customers = mask_customer_frame(customers)
+        merged = orders.merge(products...).merge(stores...)
+        merged["net_revenue"] = merged["order_amount"].where(is_delivered, 0)
+        return {"fact": merged.to_json(), ...}</span>
+<span class="blk" data-ex-title="load_star: idempotent load" data-ex="CREATE OR REPLACE TABLE rebuilds each table from the current passed rows every run.|That's what makes the load idempotent — run it twice and the counts don't change, because you replace rather than append. This directly satisfies the client's 'no double-counting' rule.">    @task
+    def load_star(t):
+        con = connect_warehouse()
+        con.execute("CREATE OR REPLACE TABLE etl_fact_orders AS SELECT * FROM fact_df")
+        # + etl_dim_customer / _product / _store</span>
+<span class="blk" data-ex-title="Wiring: parallel then serial" data-ex="The bottom of the function wires dependencies. The five extracts feed validate.|Then the DuckDB-writing tasks are chained: load_star → reconcile → report → write_dq_results → run_audit, so only one writes at a time. run_audit uses trigger_rule='all_done' so it logs the run even on failure.">    o=extract_orders(); p=extract_payments(); ...
+    v = validate(o,p,c,pr,s)
+    t = transform(v)
+    load_star(t) >> reconcile(...) >> report() >> write_dq_results(v) >> run_audit(v,q)</span>
+      </div>
+      <div class="explain-col">
+        <div class="ex-title">Explanation</div>
+        <div class="ex-text placeholder">Click any code block on the left, or press “Walk me through” above, to see a plain-English explanation here.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>dags/nammamart_elt_gaurav.py — the ELT pipeline</h2>
+  <ul>
+    <li><strong>load_raw</strong> — <code>read_csv_auto(..., all_varchar=true)</code> loads each CSV as pure text into <code>raw_*</code>, plus <code>_loaded_at</code>, <code>_source_file</code>, <code>_run_id</code> metadata. <em>Why text:</em> raw must be an exact, lossless copy.</li>
+    <li><strong>stage_dims / stage_orders</strong> — run the <code>stg_*.sql</code> files. Dimensions first, because <code>stg_orders</code> joins to them to check consistency.</li>
+    <li><strong>incremental_merge</strong> — gated by a DAG param <code>apply_increment</code> (default off, so the baseline matches ETL). Appends to raw, upserts into staging on <code>order_id</code>.</li>
+    <li><strong>build_marts</strong> — runs the <code>mart_*.sql</code> files.</li>
+    <li><strong>write_dq_results / run_audit</strong> — same observability tables as ETL, keyed by <code>dag_id</code>.</li>
+  </ul>
+  <div class="box story">
+    <div class="box-t">💡 Why a DAG param for the increment?</div>
+    The assignment needs the baseline September numbers to match ETL exactly. If the increment (October data + corrections) always ran, the totals would differ. So the increment is a switch you flip on only for that specific experiment — baseline stays comparable, and you can still demonstrate the upsert on demand.
+  </div>
+
+  <h2>include/nammamart/quality_checks.py — the shared "brain"</h2>
+  <p>Pure Python, no Airflow. Each check is a small function returning a boolean mask (True = this row fails), tagged with its <strong>dimension</strong> and <strong>severity</strong>. <code>_assemble()</code> combines them: a row is quarantined only if it fails a <span class="pill crit">Critical</span> check; it builds the <code>failure_reason</code> string and the <code>dq_rows</code> scorecard.</p>
+  <div class="box key">
+    <div class="box-t">✅ Why this design is good</div>
+    The rules live in <em>one</em> place and are plain functions — so they're unit-testable without Airflow, reusable, and the same logic powers both the pass/fail split (Part A) and the quality scorecard (Part D). Standardisation (fixing <code>upi</code>→<code>UPI</code>) runs <em>before</em> validation, so fixable mess isn't wrongly quarantined.
+  </div>
+
+  <h2>include/nammamart/masking.py — PII masking</h2>
+  <p>Two small functions: <code>mask_email</code> (keep first 2 chars + domain) and <code>mask_phone</code> (keep first 2 + last 2 digits). Safe on nulls and malformed values. Applied to the customer dimension in ETL; the ELT side does the equivalent in SQL.</p>
+
+  <h2>include/sql/ — the ELT transforms</h2>
+  <table>
+    <tr><th>File</th><th>What it builds</th></tr>
+    <tr><td><code>stg_customers.sql</code></td><td>Typed, deduped, loyalty-tier standardised, email/phone masked in SQL</td></tr>
+    <tr><td><code>stg_products.sql</code></td><td>Typed, dup/mrp = FAIL, null category → UNKNOWN (Warning)</td></tr>
+    <tr><td><code>stg_stores.sql</code>, <code>stg_payments.sql</code></td><td>Typed, deduped, standardised, tagged PASS/FAIL</td></tr>
+    <tr><td><code>stg_orders.sql</code></td><td>The big one: all 14 order checks in SQL → <code>dq_status</code> + <code>failure_reason</code></td></tr>
+    <tr><td><code>mart_daily_store_kpis.sql</code></td><td>Daily revenue by zone &amp; store (Q1)</td></tr>
+    <tr><td><code>mart_category_margin.sql</code></td><td>Revenue &amp; gross margin by category (Q2)</td></tr>
+    <tr><td><code>mart_delivery_sla.sql</code></td><td>Avg delivery time &amp; % within 15 min (Q3)</td></tr>
+    <tr><td><code>mart_payment_reconciliation.sql</code></td><td>Order/payment mismatches (Q4)</td></tr>
+    <tr><td><code>mart_top_customers.sql</code></td><td>Top 10 by spend, masked PII (Q5)</td></tr>
+  </table>
+  <div class="box gotcha">
+    <div class="box-t">⚠️ The bug worth mentioning</div>
+    Mart joins must filter <code>dq_status='PASS'</code> on the dimension side. Staging <em>flags</em> duplicate products as FAIL but keeps the row; without the filter, joining to the duplicate copy double-counted revenue. Adding <code>AND p.dq_status='PASS'</code> made ELT totals match ETL to the rupee. A clean "two implementations disagreed, here's how I found and fixed it" story.
+  </div>
+
+  <h3>🔎 Interactive: walk through an ELT staging SQL</h3>
+  <p>The ELT side cleans with SQL instead of pandas. Click through <code>stg_orders.sql</code> to see how.</p>
+  <div class="explainer">
+    <div class="explainer-head">
+      <span class="fname">include/sql/stg_orders.sql</span>
+      <span class="hint">click a block →</span>
+      <button class="walk-btn">▶ Walk me through</button>
+    </div>
+    <div class="explainer-body">
+      <div class="code-col">
+<span class="blk" data-ex-title="CREATE OR REPLACE + dedupe" data-ex="The whole staging table is rebuilt each run (idempotent, like ETL's load).|The 'deduped' CTE uses ROW_NUMBER() partitioned by order_id to number repeats; keeping rn=1 drops duplicate orders while flagging them.">CREATE OR REPLACE TABLE stg_orders AS
+WITH deduped AS (
+  SELECT *, ROW_NUMBER() OVER (
+    PARTITION BY order_id ORDER BY _loaded_at) AS rn
+  FROM raw_orders
+),</span>
+<span class="blk" data-ex-title="typed: cast text → real types" data-ex="raw_orders is all text (a lossless copy). Here TRY_CAST converts each column to its real type — and TRY_CAST returns NULL instead of erroring on garbage, so a bad number becomes NULL rather than crashing the query.|CASE expressions standardise messy values: 'upi'/'UPI '/'cod' map to canonical payment modes; 'delivered' upper-cases to 'DELIVERED'. Unmappable values (e.g. 'Cashh') are left as-is so the next step can flag them.">typed AS (
+  SELECT order_id,
+    TRY_CAST(order_ts AS TIMESTAMP) AS order_ts,
+    TRY_CAST(quantity AS INTEGER)   AS quantity,
+    CASE WHEN LOWER(TRIM(payment_mode))='upi' THEN 'UPI' ... END AS payment_mode,
+    CASE WHEN UPPER(TRIM(order_status)) IN (...) THEN UPPER(TRIM(order_status))
+         ELSE TRIM(order_status) END AS order_status,
+    ...
+  FROM deduped WHERE rn = 1
+),</span>
+<span class="blk" data-ex-title="checked: build failure_reason in SQL" data-ex="This is the SQL version of the six-dimension quality checks. CONCAT_WS(';', ...) stitches together only the reasons that apply (each CASE returns a label or NULL).|It joins to the clean dimension tables (dq_status='PASS') to check referential integrity — a NULL match means the order points at a missing/quarantined customer, product or store. The result is one failure_reason string per row, exactly like the ETL quarantine reason.">checked AS (
+  SELECT t.*, CAST(t.order_ts AS DATE) AS order_date,
+    NULLIF(TRIM(CONCAT_WS(';',
+      CASE WHEN t.customer_id IS NULL THEN 'customer_id_missing' END,
+      CASE WHEN t.quantity <= 0 THEN 'quantity_non_positive' END,
+      CASE WHEN c.customer_id IS NULL THEN 'customer_not_in_master' END,
+      ... )), '') AS failure_reason
+  FROM typed t
+  LEFT JOIN stg_customers c ON t.customer_id=c.customer_id AND c.dq_status='PASS'
+  ...
+)</span>
+<span class="blk" data-ex-title="Final: derive dq_status" data-ex="The last SELECT turns failure_reason into a verdict: no reason → 'PASS', any reason → 'FAIL'.|Downstream mart queries simply filter WHERE dq_status='PASS'. So the bad rows still live in staging (kept for audit, the ELT philosophy) but never reach the business tables.">SELECT *,
+  CASE WHEN failure_reason IS NULL
+       THEN 'PASS' ELSE 'FAIL' END AS dq_status
+FROM checked;</span>
+      </div>
+      <div class="explain-col">
+        <div class="ex-title">Explanation</div>
+        <div class="ex-text placeholder">Click any code block on the left, or press “Walk me through” above, to see a plain-English explanation here.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>include/profiling/ — the helper scripts</h2>
+  <ul>
+    <li><code>profile_data.py</code> — Part 0 data profiling: row counts, nulls, duplicates, ranges, referential-integrity and business-rule checks. Run <em>before</em> writing pipeline code (the real FDE first step).</li>
+    <li><code>inspect_warehouse.py</code> — read-only peek at the warehouse tables and counts.</li>
+    <li><code>test_logic_local.py</code> — runs the quality/masking logic locally (no Airflow) to catch bugs fast.</li>
+    <li><code>test_elt_sql.py</code> — dry-runs the ELT SQL in an in-memory DuckDB and compares totals to ETL.</li>
+    <li><code>submission_queries.py</code> — prints the dq_results / pipeline_runs / reconciliation tables and the six business answers for screenshots.</li>
+  </ul>
+
+  <h2><span class="mk">🎯</span>How to talk about this project (resume &amp; interview)</h2>
+  <div class="box key">
+    <div class="box-t">🎯 A 30-second pitch</div>
+    "I built two production-style data pipelines in Apache Airflow — one ETL (pandas) and one ELT (SQL in DuckDB) — on the same messy retail data. I implemented six-dimension data-quality checks with quarantine and lineage, PII masking, idempotent loads, an incremental MERGE upsert, and observability tables. I proved both pipelines produce identical results and wrote a recommendation comparing them."
+  </div>
+  <ul>
+    <li><strong>If asked about debugging:</strong> the DuckDB single-writer lock, the "unfinished result" cursor issue, and the duplicate-product double-count — all found by testing and fixed by understanding the root cause.</li>
+    <li><strong>If asked about design trade-offs:</strong> ETL vs ELT (auditability vs clean-tables), why mask instead of delete PII, why the increment is param-gated, parallel vs serial tasks.</li>
+    <li><strong>If asked about data quality:</strong> the six dimensions, Critical vs Warning severity, quarantine with <code>failure_reason</code>, and the <code>dq_results</code> scorecard.</li>
+  </ul>
+</section>
+
+<!-- ============================ GLOSSARY ============================ -->
+<section id="glossary" class="page">
+  <h1>Glossary</h1>
+  <p class="lead">Every term in one place, plain English. Skim it now; return whenever a word trips you up.</p>
+
+  <table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td><strong>Airflow</strong></td><td>Platform to schedule, run, and monitor workflows (DAGs).</td></tr>
+    <tr><td><strong>Astro CLI</strong></td><td>Tool that runs a full local Airflow in containers with one command.</td></tr>
+    <tr><td><strong>catchup</strong></td><td>Airflow setting for back-filling missed schedules. Off here — we only want today's run.</td></tr>
+    <tr><td><strong>container</strong></td><td>Isolated box bundling an app and its dependencies so it runs the same anywhere.</td></tr>
+    <tr><td><strong>cron</strong></td><td>Compact schedule syntax. <code>0 9 * * 1-6</code> = 9 AM, Mon–Sat.</td></tr>
+    <tr><td><strong>CSV</strong></td><td>Plain-text table; comma-separated, no types or constraints.</td></tr>
+    <tr><td><strong>DAG</strong></td><td>Directed Acyclic Graph — the workflow: tasks + dependencies, no loops.</td></tr>
+    <tr><td><strong>DataFrame</strong></td><td>pandas' in-memory table with typed columns.</td></tr>
+    <tr><td><strong>data quality dimension</strong></td><td>One of six measurable facets: completeness, uniqueness, validity, accuracy, consistency, timeliness.</td></tr>
+    <tr><td><strong>dimension table</strong></td><td>Descriptive lookup (customer, product, store) that labels the facts.</td></tr>
+    <tr><td><strong>Docker / Podman</strong></td><td>Engines that run containers. This machine uses Podman.</td></tr>
+    <tr><td><strong>dq_results</strong></td><td>Table holding every quality check's result per run — the scorecard.</td></tr>
+    <tr><td><strong>DuckDB</strong></td><td>File-based analytical SQL database — the warehouse here.</td></tr>
+    <tr><td><strong>ELT</strong></td><td>Extract, Load, Transform — load raw first, clean later in SQL.</td></tr>
+    <tr><td><strong>ETL</strong></td><td>Extract, Transform, Load — clean first, load only good rows.</td></tr>
+    <tr><td><strong>fact table</strong></td><td>The events/measurements you sum up (orders).</td></tr>
+    <tr><td><strong>failure_reason</strong></td><td>Column on quarantined rows listing which checks they broke.</td></tr>
+    <tr><td><strong>FDE</strong></td><td>Forward Deployed Engineer — ships working software on the client's data, with the client.</td></tr>
+    <tr><td><strong>gross margin</strong></td><td>Revenue minus cost (here: <code>net_revenue − quantity × cost_price</code>).</td></tr>
+    <tr><td><strong>idempotent</strong></td><td>Running twice = running once; no double-counting.</td></tr>
+    <tr><td><strong>incremental load</strong></td><td>Loading only new/changed data, not everything again.</td></tr>
+    <tr><td><strong>mart</strong></td><td>Business-ready table built for a specific question.</td></tr>
+    <tr><td><strong>masking</strong></td><td>Hiding most of a sensitive value while keeping it usable.</td></tr>
+    <tr><td><strong>MERGE / upsert</strong></td><td>Update-or-insert: overwrite matching keys, insert new ones.</td></tr>
+    <tr><td><strong>OLTP vs OLAP</strong></td><td>App databases (many small transactions) vs analytics databases (big aggregations).</td></tr>
+    <tr><td><strong>orchestration</strong></td><td>Running steps in the right order, in parallel where safe, with retries/logging.</td></tr>
+    <tr><td><strong>pandas</strong></td><td>Python library for tabular data manipulation.</td></tr>
+    <tr><td><strong>PII</strong></td><td>Personally Identifiable Information (name, email, phone).</td></tr>
+    <tr><td><strong>pipeline_runs</strong></td><td>Audit table: one row per run (rows in/loaded/quarantined, status).</td></tr>
+    <tr><td><strong>quarantine</strong></td><td>Setting bad rows aside with a reason instead of deleting them.</td></tr>
+    <tr><td><strong>raw / staging / mart</strong></td><td>The three ELT layers: exact copy → cleaned → business-ready.</td></tr>
+    <tr><td><strong>reconciliation</strong></td><td>Checking that orders and payments agree; listing mismatches.</td></tr>
+    <tr><td><strong>referential integrity</strong></td><td>Every foreign key (e.g. order's product_id) exists in its master table.</td></tr>
+    <tr><td><strong>severity</strong></td><td>Critical (quarantine the row) vs Warning (load but log).</td></tr>
+    <tr><td><strong>star schema</strong></td><td>Central fact table joined to surrounding dimension tables.</td></tr>
+    <tr><td><strong>task</strong></td><td>One step in a DAG (a box in the graph).</td></tr>
+    <tr><td><strong>TaskFlow API</strong></td><td>Airflow style where a <code>@task</code>-decorated Python function is a task.</td></tr>
+    <tr><td><strong>XCom</strong></td><td>Airflow's mechanism for passing data between tasks (used here as JSON).</td></tr>
+    <tr><td><strong>warehouse</strong></td><td>Database tuned for analytics/reporting (DuckDB here).</td></tr>
+  </table>
+
+  <div class="footer-note">
+    NammaMart Data Pipelines — Learning Guide · built to be read offline. Toggle "Story mode" in the header to switch between learning and revision views.
+  </div>
+</section>
+
+</main>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
